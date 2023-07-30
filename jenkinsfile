@@ -1,0 +1,152 @@
+pipeline {
+    
+    agent any
+    
+    tools {
+        
+        maven 'mvn'
+        
+    }
+    
+    stages {
+        
+        stage ('Git-Checkout') {
+            
+            steps {
+                
+                git branch: 'main',
+                credentialsId: 'github-token',
+                url: 'https://github.com/abhishekishor/jenkins-maven-sonar-nexus-tomcat-docker.git'
+                
+            }
+            
+        }
+        
+        stage ('Maven Build') {
+            
+            steps {
+                
+                sh 'mvn clean package'
+                
+            }
+            
+            post {
+                
+                success {
+                    
+                    archiveArtifacts artifacts: '*/**.jar'
+                    
+                }
+            
+            }
+        
+        }
+        
+        stage ('Code Analysis') {
+            
+            steps {
+                
+                withSonarQubeEnv('sonar-server') {
+                
+                sh 'mvn sonar:sonar'
+                
+                }
+                
+            }
+            
+        }
+        
+        stage ('Upload Artifact') {
+            
+            steps {
+                
+                script {
+                    
+                    def mavenPom = readMavenPom file: 'pom.xml'
+                    
+                    def nexusRepoName = mavenPom.version.endsWith("SNAPSHOT") ? "nexus-arti-snapshot" : "nexus-arti-release"
+                    
+                    nexusArtifactUploader artifacts: [
+                    [artifactId: "${mavenPom.artifactId}", 
+                    classifier: '', 
+                    file: "target/${mavenPom.artifactId}-${mavenPom.version}.${mavenPom.packaging}", 
+                    type: "${mavenPom.packaging}"
+                    ]
+                        ], 
+                        credentialsId: 'nexus-cred', 
+                        groupId: "${mavenPom.groupId}" , 
+                        nexusUrl: "${nexus_ip}", 
+                        nexusVersion: 'nexus3', 
+                        protocol: 'http', 
+                        repository: "${nexusRepoName}" , 
+                        version: "${mavenPom.version}"
+                    
+                }
+                
+            }
+            
+        }
+        
+        stage ('Deploying Artifact') {
+            
+            steps {
+                
+                script {
+                    
+                    sshagent(['tomcat-server']) {
+                        
+                        sh "scp -o StrictHostKeyChecking=no $WORKSPACE/*/**.jar ubuntu@$tomcat_ip:/opt/tomcat/webapps"
+                        
+                    }
+                    
+                }
+                
+                
+            }
+            
+        }
+        
+        stage ('docker-build') {
+            
+            steps {
+                
+                script {
+                    
+                    sh "docker build -t abhishekkishor1/java-web-app:${env.BUILD_NUMBER} ."
+                    
+                }
+                
+            }
+            
+        }
+        
+        stage ('Docker Login & Push') {
+            
+            steps {
+                
+                script {
+                    
+                    withCredentials([string(credentialsId: 'dockerhub-pwd', variable: 'dockerhublogin')]) {
+                        
+                        sh 'docker login -u abhishekkishor1 -p ${dockerhublogin}'
+                        
+                    }
+                    
+                }
+                
+            }
+            
+            post {
+                
+                success {
+                    
+                    sh "docker push abhishekkishor1/java-web-app:${env.BUILD_NUMBER}"
+                    
+                }
+                
+            }
+        }
+        
+    }
+    
+}
