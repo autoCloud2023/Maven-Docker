@@ -6,9 +6,8 @@ pipeline {
             
             steps {
                 
-                git branch: 'main',
-                credentialsId: 'github-token',
-                url: 'https://github.com/abhishekishor/jenkins-maven-sonar-nexus-tomcat-docker.git'
+                git branch: 'main', 
+                url: 'https://github.com/VardhanLearn/Jenkins-Maven-Docker.git'
                 
             }
             
