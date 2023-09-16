@@ -1,7 +1,8 @@
-pipeline { 
+pipeline {
     
-    stages {
-        
+    agent any
+    
+      stages {
         stage ('Git-Checkout') {
             
             steps {
@@ -10,53 +11,43 @@ pipeline {
                 url: 'https://github.com/VardhanLearn/Jenkins-Maven-Docker.git'
                 
             }
-            
-        }
+        }  
         
-        stage ('Maven Build') {
-            
+         stage ('Maven-Build') {
+             
+             steps {
+                
+                sh 'mvn install -DskipTests'   
+             }
+             
+             post {
+	           success {
+	              echo 'Now Archiving it...'
+	              archiveArtifacts artifacts: '*/**.jar'
+	           }
+	        }
+        }
+	        
+         stage('UNIT TEST') {
+            steps{
+                sh 'mvn test'
+            }
+       } 
+         stage('Checkstyle Analysis'){
             steps {
-                
-                sh 'mvn clean package'
-                
+                sh 'mvn checkstyle:checkstyle'
             }
-            
-            post {
-                
-                success {
-                    
-                    archiveArtifacts artifacts: '*/**.jar'
-                    
-                }
-            
-            }
-        
-        }
-        
-        stage ('docker-build') {
-            
-            steps {
-                
-                script {
-                    
-                    sh "docker build -t abhishekkishor1/java-web-app:${env.BUILD_NUMBER} ."
-                    
-                }
-                
-            }
-            
-        }
-        
-        stage ('Docker Login & Push') {
+       }
+        stage ('Docker Build & Push') {
             
             steps {
                 
                 script {
                     
-                    withCredentials([string(credentialsId: 'dockerhub-pwd', variable: 'dockerhublogin')]) {
+                    withDockerRegistry(credentialsId: 'vardhan8928-docker') {
                         
-                        sh 'docker login -u abhishekkishor1 -p ${dockerhublogin}'
-                        
+                        sh "docker build -t vardhan8928/docker-java-web-app:tag124 ."
+                        sh "docker push vardhan8928/docker-java-web-app:tag124"
                     }
                     
                 }
@@ -67,7 +58,8 @@ pipeline {
                 
                 success {
                     
-                    sh "docker push abhishekkishor1/java-web-app:${env.BUILD_NUMBER}"
+                   echo 'Now Archiving it...'
+	               archiveArtifacts artifacts: '*/**.jar'
                     
                 }
                 
