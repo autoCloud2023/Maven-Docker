@@ -1,3 +1,3 @@
 # Jenkins-Maven-Docker
 
-![Jenkins-Maven-Docker](https://github.com/VardhanLearn/Jenkins-Maven-Docker/assets/87961252/730a3b89-64a9-447a-af18-14050cc44d9f)
+![Jenkins-Maven-Docker](https://github.com/VardhanLearn/Jenkins-Maven-Docker/assets/87961252/b63ec60c-671c-45b7-adfc-d03454b25089)
