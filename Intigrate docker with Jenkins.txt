@@ -1,0 +1,31 @@
+1. AWS console login & create Ec2 server, rename with Jenkins -> access the server with .pem key2
+2. Jenkins will work on port 8080.
+2a) in server --Sudo apt update
+	      Sudo apt install docker.io -y
+	      docker  --version
+3. Next you need to install Plugins Docker, Docker pipeline, docker-build-step, cloudbees docker build.
+4. Goto Manage Jenkins -> tools -> give JDK 8 version & add 11 -> add Maven version also -> 
+   give name as Docker & install automatically add download form docker.com dockerversion as latest
+5. apply & save it
+6. Enter command as -> sudo usermod -a -G docker jenkins
+6a) Enter Docker User Credentials in Manage Jenkins-->Credentials--Username,Password and auto
+   b) for 6a docker password , generate Encryted password from dockerhub(Profile-Acc Settings-Access Tokens-Give some name and copy Password)
+7. write groovy script as per your requirements
+8. for docker goto jenkins pipeline syntax -> search for withDockerRegistry
+9. update the script as per below & change modifications in the script related to your docker repo
+10. stage ('Docker Build & Push'){
+        steps{
+ 	    script{
+		withDockerRegistry(credentialsId: 'vardhan8928-docker') {
+		   sh "docker build -t autocloud2023/mission2023:tag123  ."
+		   sh "docker push autocloud2023/mission2023:tag123" 
+  }
+  }
+ }	
+}
+11. If you get any permission denied error enter below commands
+11a) sudo chmod 666 /var/run/docker.sock
+ sudo systemctl docker status
+12. docker ps -a
+13. sudo usermod -aG docker ${USER}
+14. Finally you build will be success
